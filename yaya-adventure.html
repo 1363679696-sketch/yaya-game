@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+  <title>伢牙乐防蛀冒险岛</title>
+    <style>
+    *{box-sizing:border-box;margin:0;padding:0;font-family:"微软雅黑","Helvetica",sans-serif;}
+    body{
+      background:linear-gradient(135deg,#fdf2ff 0%,#e0f2fe 35%,#020617 100%);
+      color:#fff;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+    }
+    #game{
+      width:100%;
+      max-width:1100px;
+      height:90vh;
+      background:radial-gradient(circle at top,#1e1b4b,#020617);
+      border-radius:20px;
+      box-shadow:0 0 35px rgba(15,23,42,.9);
+      overflow:hidden;
+      position:relative;
+    }
+    .screen{
+  display:none;
+  width:100%;
+  height:100%;
+  padding:18px 22px;
+  position:absolute;
+  top:0;
+  left:0;
+}
+
+/* 所有页面统一用纵向 flex 布局 */
+.screen.active{
+  display:flex;
+  flex-direction:column;
+}
+
+/* 只对加载页做垂直居中 */
+#screen-loading{
+  align-items:center;        /* 水平居中里面那一列 */
+  justify-content:center;    /* 垂直居中 */
+}
+
+/* 限制加载页内容最大宽度，别太宽 */
+#screen-loading .loading-inner{
+  width:100%;
+  max-width:900px;
+}
+
+    h1,h2,h3{font-weight:700;}
+    button{
+      border:none;
+      outline:none;
+      border-radius:999px;
+      padding:10px 22px;
+      font-size:16px;
+      cursor:pointer;
+      margin:6px 4px;
+      transition:.18s transform,.18s box-shadow;
+    }
+    button:hover{transform:translateY(-1px);box-shadow:0 0 10px rgba(248,250,252,.35);}
+    .btn-primary{
+      background:linear-gradient(135deg,#60a5fa,#a5b4fc);
+      color:#fff;
+    }
+    .btn-secondary{
+      background:linear-gradient(135deg,#f9a8d4,#fb7185);
+      color:#fff;
+    }
+    .btn-ghost{
+      background:rgba(15,23,42,.8);
+      color:#e5e7eb;
+      border:1px solid rgba(148,163,184,.7);
+    }
+    .badge{
+      display:inline-block;
+      padding:3px 10px;
+      border-radius:999px;
+      font-size:12px;
+      background:rgba(15,23,42,.95);
+      border:1px solid rgba(165,180,252,.8);
+      margin-left:6px;
+    }
+    .logo-area{display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+    .fake-logo
+{
+  width:110px
+;
+  height:48px
+;
+  border-radius:12px
+;
+  background:#ffffff
+;
+  display
+:flex;
+  align-items
+:center;
+  justify-content
+:center;
+  box-shadow:0 4px 10px rgba(148,163,184,.35
+);
+}
+    .fake-logo span{display:none;} /* 保险，旧的 span 不用就隐藏掉 */
+    .logo-img
+{
+  max-width:100%
+;
+  max-height:100%
+;
+  object-fit
+:contain;
+}
+    .loading-bar{
+      width:100%;
+      height:18px;
+      border-radius:999px;
+      background:rgba(15,23,42,.9);
+      overflow:hidden;
+      margin-top:10px;
+      box-shadow:0 0 0 1px rgba(148,163,184,.5) inset;
+    }
+    .loading-fill{
+      height:100%;
+      width:0%;
+      background:repeating-linear-gradient(
+        60deg,
+        rgba(96,165,250,.25) 0,
+        rgba(96,165,250,.25) 6px,
+        rgba(129,140,248,.9) 6px,
+        rgba(249,168,212,.9) 12px
+      );
+      transition:width .2s;
+    }
+    .loading-bubbles{margin-top:12px;height:46px;display:flex;align-items:flex-end;gap:6px;}
+    .bubble{width:10px;border-radius:999px;background:rgba(96,165,250,.7);animation:bubble 1.3s infinite ease-in-out;}
+    .bubble:nth-child(2){animation-delay:.15s;}
+    .bubble:nth-child(3){animation-delay:.3s;}
+    .bubble:nth-child(4){animation-delay:.45s;}
+    .bubble:nth-child(5){animation-delay:.6s;}
+    @keyframes bubble{
+      0%{height:10px;opacity:.3;transform:translateY(0);}
+      50%{height:26px;opacity:.95;transform:translateY(-6px);}
+      100%{height:10px;opacity:.3;transform:translateY(0);}
+    }
+    .flex-row{display:flex;gap:18px;}
+    .flex-col{display:flex;flex-direction:column;gap:10px;}
+    .center{display:flex;justify-content:center;align-items:center;}
+    .character-card{
+      flex:1;
+      background:rgba(15,23,42,.9);
+      border-radius:18px;
+      padding:14px;
+      border:2px solid transparent;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+      transition:.18s border,.18s transform,.18s box-shadow;
+    }
+    .character-card:hover{transform:translateY(-3px);box-shadow:0 0 18px rgba(129,140,248,.7);}
+    .character-card.selected{border-color:#a5b4fc;box-shadow:0 0 18px rgba(129,140,248,.9);}
+    /* 预览框稍微大一点，适合塞整个人物 */
+.avatar-preview{
+  width:160px;
+  height:180px;
+  border-radius:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:10px;
+  position:relative;
+}
+
+/* 现在用真图了，这个白色盖子就关掉 */
+.avatar-preview::after{
+  display:none;
+}
+
+/* 让图片自适应缩放 */
+.avatar-img{
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+  display:block;
+}
+
+    .speaks{
+      font-size:13px;
+      color:#e5e7eb;
+      background:rgba(15,23,42,.95);
+      border-radius:12px;
+      padding:6px 9px;
+      margin-top:4px;
+      border:1px solid rgba(165,180,252,.9);
+    }
+    .input-inline{display:flex;align-items:center;gap:10px;margin-top:10px;}
+    input[type="text"]{
+      padding:7px 10px;
+      border-radius:999px;
+      border:1px solid rgba(165,180,252,.8);
+      background:rgba(15,23,42,.9);
+      color:#e5e7eb;
+      min-width:190px;
+    }
+    .hud{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:14px;
+      padding:10px 14px;
+      border-radius:14px;
+      background:linear-gradient(90deg,rgba(15,23,42,.95),rgba(30,64,175,.9));
+      border:1px solid rgba(129,140,248,.9);
+    }
+    .hud-left{display:flex;align-items:center;gap:10px;}
+    .hud-avatar{
+  width:50px;
+  height:50px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:radial-gradient(circle at 10% 0,#93c5fd,#1d4ed8);
+  position:relative;
+  overflow:hidden;   /* 为了把头像图片裁成圆形 */
+}
+
+/* 女生背景还是保留粉色渐变 */
+.hud-avatar.girl{
+  background:radial-gradient(circle at 10% 0,#f9a8d4,#ec4899);
+}
+
+/* 新增：头像图片自适应 */
+.hud-avatar-img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+}
+
+    .hud-avatar span{font-size:20px;}
+    .hud-info{display:flex;flex-direction:column;font-size:13px;}
+    .hud-info strong{font-size:16px;}
+    .hud-right{font-size:13px;display:flex;gap:14px;align-items:center;}
+    .map{
+      flex:1;
+      border-radius:18px;
+      background:radial-gradient(circle at 20% 0,#93c5fd,#f9a8d4,#020617);
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    .map-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+    .tree-area{
+      margin-top:8px;
+      padding:10px;
+      border-radius:14px;
+      background:rgba(15,23,42,.9);
+      border:1px solid rgba(165,180,252,.9);
+      font-size:13px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .tree
+{
+  width:80px
+;
+  height:80px
+;
+  border-radius:999px
+;
+  position
+:relative;
+  overflow
+:hidden;
+  background:#fdf2ff
+;
+  box-shadow:0 0 20px rgba(252,165,255,.6
+);
+}
+
+/* 树图片铺满容器 */
+.tree-img
+{
+  width:100%
+;
+  height:100%
+;
+  object-fit
+:contain;
+  display
+:block;
+}
+
+/* 之前画树干的伪元素关掉 */
+.tree::after
+{
+  display
+:none;
+}
+
+/* 未解锁状态变灰 */
+.tree.locked
+{
+  filter:grayscale(1
+);
+  opacity:.6
+;
+  box-shadow
+:none;
+}
+
+/* 解锁并结果时的高亮 + “果” 字徽章，继续保留 */
+.tree.tree-fruit
+{
+  filter
+:none;
+  opacity:1
+;
+  box-shadow:0 0 24px rgba(252,165,255,.85
+);
+}
+.tree.tree-fruit::before
+{
+  content:"果"
+;
+  position
+:absolute;
+  top:4px
+;
+  right:5px
+;
+  width:18px
+;
+  height:18px
+;
+  border-radius:50%
+;
+  background:#f97316
+;
+  color:#111
+;
+  font-size:11px
+;
+  display
+:flex;
+  align-items
+:center;
+  justify-content
+:center;
+}
+    .map-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px;}
+    .level-card
+{
+  position
+:relative;
+  border-radius:20px
+;
+  padding:14px 14px 16px
+;
+  background:#ffffff
+;
+  border:1px solid rgba(191,219,254,.9
+);
+  box-shadow:0 8px 18px rgba(148,163,184,.18
+);
+  transition:.2s transform,.2s box-shadow,.2s border-color,.2s
+ background;
+}
+
+/* 每个关卡单独的柔和渐变背景 */
+#btnLevel1{background:linear-gradient(135deg,#ffe7da,#fdf2ff
+);}
+#btnLevel2{background:linear-gradient(135deg,#e0f2fe,#f5f3ff
+);}
+#btnLevel3{background:linear-gradient(135deg,#f4f4ff,#ffeefb
+);}
+#btnLevel4{background:linear-gradient(135deg,#fff7ed,#fdf2ff
+);}
+
+.shield-tip{
+  font-size:12px;
+  margin-top:8px;
+  color:#4b5563;
+  background:#ffffff;
+  border-radius:999px;
+  border:1px solid #e5e7eb;
+  padding:6px 12px;
+}
+
+
+    .level-card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:radial-gradient(circle at top,#38bdf81a,#fb71851a,transparent 60%);
+      opacity:.8;
+      pointer-events:none;
+    }
+    .level-card:hover{
+      transform:translateY(-3px);
+      box-shadow:0 0 14px rgba(129,140,248,.8);
+    }
+    .level-card.locked{
+  position:relative;
+  border-style:dashed;
+  border-color:rgba(203,213,225,.9);
+  box-shadow:none;
+  opacity:0.7;
+}
+.level-card.locked::after{
+  content:"🔒 未解锁";
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  color:#9ca3af;
+  background:rgba(255,255,255,.6);
+  backdrop-filter:blur(2px);
+}
+.level-card.locked .level-title,
+.level-card.locked .level-sub{
+  color:#cbd5f5;
+}
+.level-card.current{
+  border-color:#a5b4fc;
+  box-shadow:0 0 0 2px rgba(165,180,252,.5);
+}
+.level-card.current::before{
+  content:"";
+  position:absolute;
+  left:14px;
+  right:14px;
+  bottom:10px;
+  height:3px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#60a5fa,#a855f7,#f97316);
+  opacity:.85;
+}
+.level-card:hover:not(.locked){
+  transform:translateY(-4px);
+  box-shadow:0 10px 20px rgba(148,163,184,.35);
+}
+
+    .level-tag{
+  position:absolute;
+  top:10px;
+  right:10px;
+  padding:3px 10px;
+  border-radius:999px;
+  font-size:12px;
+  background:rgba(15,23,42,.06);
+  color:#4b5563;
+}
+/* 标题和副标题字体微调一下，让层级更明显 */
+.level-title{
+  font-size:15px;
+  font-weight:600;
+  color:#111827;
+  margin-bottom:6px;
+}
+.level-sub{
+  font-size:12px;
+  color:#9ca3af;
+}
+
+/* 给每关配一个小圆图标 */
+.level-icon{
+  position:absolute;
+  bottom:10px;
+  right:12px;
+  width:28px;
+  height:28px;
+  border-radius:999px;
+  background:rgba(255,255,255,.9);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:16px;
+}
+
+    .bottom-nav{margin-top:12px;display:flex;justify-content:space-between;}
+    .bottom-nav button{flex:1;}
+    .bottom-nav button + button{margin-left:8px;}
+    .dialog{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(15,23,42,.85);
+      backdrop-filter:blur(6px);
+      z-index:20;
+    }
+    .dialog.active{display:flex;}
+    .dialog-box{
+      background:rgba(15,23,42,1);
+      padding:20px 22px;
+      border-radius:18px;
+      width:100%;
+      max-width:420px;
+      border:1px solid rgba(129,140,248,.9);
+      box-shadow:0 0 20px rgba(15,23,42,.9);
+    }
+    .dialog-title{font-size:18px;margin-bottom:6px;}
+    .dialog-content{
+  font-size:14px;
+  margin-bottom:14px;
+  line-height:1.5;
+  white-space: pre-line;   /* 这句是新加的 */
+}
+
+    .game-area{
+      margin-top:8px;
+      border-radius:16px;
+      background:rgba(15,23,42,.96);
+      padding:10px;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+    }
+    .game-top-bar{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:6px;}
+    .game-field{
+      flex:1;
+      border-radius:12px;
+      border:1px solid rgba(51,65,85,.9);
+      background:radial-gradient(circle at 20% 0,#1e293b,#020617);
+      margin-top:6px;
+      padding:8px;
+      position:relative;
+      overflow:hidden;
+    }
+    /* Level1 */
+    .monster,.guardian{
+      position:absolute;
+      width:70px;
+      height:70px;
+      border-radius:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:28px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .monster{
+      background:radial-gradient(circle at 20% 0,#fb923c,#c2410c);
+      box-shadow:0 0 15px rgba(248,250,252,.5);
+    }
+    .guardian{
+      background:radial-gradient(circle at 20% 0,#4ade80,#16a34a);
+      box-shadow:0 0 15px rgba(52,211,153,.7);
+    }
+    .monster span,.guardian span{font-size:28px;}
+    .shield-tip{font-size:13px;margin-top:4px;color:#bfdbfe;}
+    /* Level2 */
+    .teeth-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:6px;}
+    .tooth{
+      height:50px;
+      border-radius:14px;
+      background:radial-gradient(circle at 20% 0,#facc15,#b45309);
+      position:relative;
+      cursor:pointer;
+      border:1px solid rgba(248,250,252,.7);
+    }
+    .tooth.clean{background:radial-gradient(circle at 20% 0,#fdf2ff,#e5e7eb);}
+    .tooth::after{
+      content:"蛀";
+      position:absolute;
+      top:4px;
+      left:50%;
+      transform:translateX(-50%);
+      font-size:12px;
+      color:#111;
+    }
+    .tooth.clean::after{content:"✨";font-size:14px;top:8px;}
+    /* Level3 */
+    .puzzle-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px;width:210px;}
+    .puzzle-tile{
+      width:66px;
+      height:66px;
+      border-radius:12px;
+      background:linear-gradient(135deg,#60a5fa,#c4b5fd);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:22px;
+      font-weight:bold;
+      cursor:pointer;
+      user-select:none;
+      border:1px solid rgba(248,250,252,.7);
+    }
+    .puzzle-tile.empty{
+      background:rgba(15,23,42,.8);
+      border-style:dashed;
+      cursor:default;
+    }
+    .puzzle-hint{font-size:13px;margin-top:6px;color:#bfdbfe;}
+    /* Level4 */
+    .poster-layout{display:flex;gap:10px;margin-top:6px;flex:1;}
+    .poster-left{
+      flex:2;
+      border-radius:14px;
+      background:#020617;
+      border:1px solid rgba(129,140,248,.8);
+      padding:6px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .poster-left img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;}
+    .poster-right{
+      flex:1;
+      border-radius:14px;
+      background:rgba(15,23,42,.96);
+      border:1px solid rgba(129,140,248,.8);
+      padding:8px;
+      font-size:13px;
+    }
+    .sticker-btn{display:block;width:100%;margin-bottom:6px;font-size:13px;}
+    .sticker{
+      position:absolute;
+      width:80px;
+      height:80px;
+      border-radius:20px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:14px;
+      font-weight:bold;
+      color:#fff;
+      cursor:grab;
+      user-select:none;
+    }
+    .sticker.boy{background:radial-gradient(circle at 20% 0,#93c5fd,#1d4ed8);}
+    .sticker.girl{background:radial-gradient(circle at 20% 0,#f9a8d4,#ec4899);}
+    .sticker.heart{background:radial-gradient(circle at 20% 0,#f97316,#ea580c);}
+    /* overlay result */
+    #resultOverlay{
+      position:absolute;
+      inset:0;
+      background:rgba(15,23,42,.88);
+      backdrop-filter:blur(6px);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:30;
+    }
+    #resultOverlay.active{display:flex;}
+    #resultBox{
+      background:#020617;
+      border-radius:20px;
+      padding:20px 22px;
+      border:1px solid rgba(129,140,248,.9);
+      max-width:460px;
+      width:100%;
+      box-shadow:0 0 20px rgba(15,23,42,.9);
+    }
+    #resultBox h3{margin-bottom:6px;}
+    #resultBox p{font-size:14px;margin-bottom:10px;line-height:1.6;}
+    .medal{
+      display:inline-block;
+      margin-top:4px;
+      padding:3px 10px;
+      border-radius:999px;
+      font-size:12px;
+      background:linear-gradient(135deg,#fde68a,#fb923c);
+      color:#111;
+      font-weight:bold;
+    }
+   /* 手机端适配：允许纵向滚动，内容不要被挤没 */
+@media (max-width:900px){
+  /* 整个页面从“居中卡片”改成正常从上往下排版 */
+  body{
+    display:block;
+    height:auto;
+    min-height:100vh;
+    background:linear-gradient(135deg,#fdf2ff,#e0f2fe);
+  }
+
+  /* 外层容器高度不再死锁 100vh，改成自适应，可滚动 */
+  #game{
+    width:100%;
+    height:auto;
+    min-height:100vh;
+    border-radius:0;
+    box-shadow:none;
+  }
+
+  /* 每个 screen 也不锁死高度，允许内部滚动 */
+  .screen{
+    height:auto;
+    min-height:100vh;
+    padding:16px 14px 28px;
+    overflow-y:auto;
+  }
+
+  /* 地图、创建角色里的左右布局改成上下堆叠 */
+  .flex-row{
+    flex-direction:column;
+  }
+
+   
+/* 创建角色页：卡片瘦身版 */
+  .character-card
+{
+    padding:10px 12px
+;
+    border-radius:16px
+;
+    /* 竖排的时候上下别太挤 */
+    gap:8px
+;
+  }
+
+  /* 人物图再缩一点，整体高度会下去很多 */
+  .avatar-preview
+{
+    width:120px
+;
+    height:140px
+;
+    margin:0 auto 6px
+;
+  }
+
+  /* 文案也稍微缩一下字号，避免撑高 */
+  .character-card div[style*="font-weight:600"
+]{
+    font-size:13px
+;
+  }
+  .speaks
+{
+    font-size:12px
+;
+    padding:5px 8px
+;
+  }
+
+  /* 整个创建页底部多留一点空，按钮不会被贴边遮住 */
+  #screen-character
+{
+    padding-bottom:40px
+;
+  }
+}
+
+
+  /* 游戏区域和游戏场地尽量撑满剩余高度 */
+  .game-area{
+    flex:1;
+    margin-top:10px;
+  }
+  .game-top-bar{
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .game-field{
+    flex:1;
+    min-height:260px;   /* 防止变成小小一块 */
+  }
+ 
+/* 地图卡片在手机端排两列，别太挤 */
+  .map-grid
+{
+    grid-template-columns:repeat(2,1
+fr);
+    gap:10px
+;
+  }
+
+  /* 给标题预留出右侧空间，让“关卡1”不会压上来 */
+  .level-title
+{
+    font-size:14px
+;
+    margin-right:48px
+;
+  }
+  .level-sub
+{
+    font-size:11px
+;
+  }
+  .level-tag
+{
+    top:8px
+;
+    right:8px
+;
+    font-size:11px
+;
+    padding:2px 8px
+;
+  }
+
+    /* === 浅色粉蓝主题覆盖，从这里开始粘到 <style> 最后 === */
+
+body{
+  background:linear-gradient(135deg,#fdf2ff,#e0f2fe);
+  color:#111;
+}
+
+/* 游戏外壳变成白色卡片 */
+#game{
+  background:#ffffff;
+  box-shadow:0 14px 40px rgba(15,23,42,.18);
+}
+
+/* 每个 screen 背景改成浅粉蓝，而不是纯深色 */
+.screen{
+  background:radial-gradient(circle at top,#f9fbff,#eef2ff);
+}
+
+/* 按钮幽灵款浅一点 */
+.btn-ghost{
+  background:#eff6ff;
+  color:#1f2937;
+  border:1px solid #bfdbfe;
+}
+
+/* 顶部小徽章变浅色 */
+.badge{
+  background:#eff6ff;
+  color:#4b5563;
+  border:1px solid #c7d2fe;
+}
+
+/* 角色卡片：默认浅蓝，女生那张改成浅粉 */
+.character-card{
+  background:#f9fafb;
+}
+#cardBoy{
+  background:linear-gradient(135deg,#e0f2fe,#dbeafe);
+}
+#cardGirl{
+  background:linear-gradient(135deg,#ffe4f5,#fecaca);
+}
+
+/* 角色身体和对话气泡变成浅色块 */
+.avatar-body{
+  background:rgba(15,23,42,.04);
+  border-color:#e5e7eb;
+}
+.speaks{
+  background:#ffffff;
+  border-color:#e5e7eb;
+  color:#4b5563;
+}
+
+/* 输入框白底 */
+input[type="text"]{
+  background:#ffffff;
+  color:#111827;
+  border-color:#cbd5f5;
+}
+
+/* 顶部 HUD 条淡粉蓝渐变 */
+.hud{
+  background:linear-gradient(90deg,#eff6ff,#fdf2ff);
+  border-color:#c7d2fe;
+}
+.hud-info span{
+  color:#4b5563;
+}
+
+/* 地图区域 & 守护树区域浅色 */
+.map{
+  background:linear-gradient(180deg,#f9fbff,#eef2ff);
+}
+.tree-area{
+  background:#ffffff;
+  border-color:#e5e7eb;
+}
+
+/* 关卡卡片白色，保持粉蓝描边 */
+.level-card{
+  background:#ffffff;
+}
+
+/* 游戏内容区域改成浅色 */
+.game-area{
+  background:#f9fafb;
+}
+.game-field{
+  background:#ffffff;
+}
+
+/* 海报区域浅色 */
+.poster-left{
+  background:#f9fafb;
+}
+.poster-right{
+  background:#ffffff;
+}
+
+/* 弹窗和结果浮层变成“白色卡片 + 半透明灰背景” */
+.dialog{
+  background:rgba(148,163,184,.25);
+}
+.dialog-box{
+  background:#ffffff;
+  color:#111827;
+}
+#resultOverlay{
+  background:rgba(148,163,184,.30);
+}
+#resultBox{
+  background:#ffffff;
+  color:#111827;
+}
+
+  </style>
+
+</head>
+<body>
+<div id="game">
+  <!-- 加载界面 -->
+  <div id="screen-loading" class="screen active">
+   <div class="loading-inner"> 
+    <div class="logo-area">
+      <div class="fake-logo">
+  <img src="images/yayale-logo.png" alt="伢牙乐" class="logo-img">
+</div>
+      <div>
+        <h1>防蛀冒险岛</h1>
+        <div style="font-size:13px;margin-top:4px;">920爱牙日到啦，和伢牙骑士一起打败蛀牙怪兽吧～</div>
+      </div>
+    </div>
+    <div style="margin-top:18px;font-size:14px;">正在用防蛀泡沫填充加载进度，请稍等…</div>
+    <div class="loading-bar">
+      <div class="loading-fill" id="loadingFill"></div>
+    </div>
+    <div class="loading-bubbles">
+      <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:12px;">
+
+  </div>
+    </div>
+    </div>
+
+  <!-- 角色创建 -->
+  <div id="screen-character" class="screen">
+    <h2>创建你的伢牙乐防蛀骑士</h2>
+    <div style="font-size:13px;margin-top:4px;">选择喜欢的骑士形象，给自己取一个防蛀昵称，一起出发守护牙齿城堡。</div>
+    <div class="flex-row" style="margin-top:14px;">
+      <div id="cardBoy" class="character-card selected">
+  <div class="avatar-preview avatar-boy">
+    <img src="images/knight-boy.png" alt="蓝白伢牙骑士" class="avatar-img">
+  </div>
+  <div style="font-size:14px;font-weight:600;color:#1f2937;margin-top:4px;">牙小蓝伢牙骑士</div>
+  <div class="speaks">“交给我，糖酸怪兽一个也别想跑！”</div>
+</div>
+
+      <div id="cardGirl" class="character-card">
+  <div class="avatar-preview avatar-girl">
+    <img src="images/knight-girl.png" alt="粉紫伢牙骑士" class="avatar-img">
+  </div>
+  <div style="font-size:14px;font-weight:600;color:#1f2937;margin-top:4px;">齿小粉伢牙骑士</div>
+  <div class="speaks">“刷得干干净净，我们一起让笑容发光。”</div>
+</div>
+
+    </div>
+    <div class="input-inline">
+      <label for="nickname" style="font-size:14px;">骑士昵称：</label>
+      <input id="nickname" type="text" />
+      <button id="btnRandomName" class="btn-ghost">随机生成</button>
+    </div>
+    <div style="margin-top:10px;font-size:13px;">提示：昵称默认会是“防蛀骑士+数字”，你也可以改成自己喜欢的名字。</div>
+    <div style="margin-top:18px;">
+      <button id="btnEnterIsland" class="btn-primary">进入防蛀冒险岛</button>
+    </div>
+  </div>
+
+  <!-- 首页地图 -->
+  <div id="screen-home" class="screen">
+    <div class="hud">
+      <div class="hud-left">
+         
+<div id="hudAvatar" class="hud-avatar"
+>
+      <img class="hud-avatar-img" src="images/tooth-boy.png" alt="伢牙骑士头像"
+>
+    </div
+>
+        <div class="hud-info">
+          <strong id="hudName">防蛀骑士</strong>
+          <span>当前伢分：<span id="hudPoints">0</span></span>
+        </div>
+      </div>
+      <div class="hud-right">
+        
+       <button id="btnBackToCreator" class="btn-ghost">返回</button> 
+       <button id="btnReset" class="btn-ghost">重置</button
+>
+      </div>
+    </div>
+    <div class="flex-row" style="margin-top:6px;height:calc(100% - 80px);">
+      <div class="map">
+        <div class="map-top">
+          <div>
+            <h3>口腔森林 · 冒险地图</h3>
+            <div style="font-size:13px;margin-top:2px;">点击关卡图标开始挑战，达成目标即可解锁下一座岛。</div>
+          </div>
+          <div class="badge">牙齿城堡正等待守护</div>
+        </div>
+       <div class="tree-area">
+  <div id="guardTree" class="tree locked">
+    <img id="guardTreeImg" class="tree-img" src="images/guard-tree.png" alt="防蛀守护树">
+  </div>
+  <div>
+    <div style="font-size:14px;">防蛀守护树</div>
+    <div id="treeText" style="font-size:13px;margin-top:2px;">
+      完成四大关卡后，这棵树会开花结果，长出兑换果实。
+    </div>
+  </div>
+</div>
+
+        <div class="map-grid">
+  <div id="btnLevel1" class="level-card">
+    <div class="level-tag">关卡1</div>
+    <div class="level-title">糖酸怪兽退散</div>
+    <div class="level-sub">60秒内击退不少于30只糖酸怪兽，注意别误伤防蛀卫士。</div>
+    <div class="level-icon">🍭</div>
+  </div>
+
+  <div id="btnLevel2" class="level-card locked">
+    <div class="level-tag">关卡2</div>
+    <div class="level-title">闪光牙刷骑士</div>
+    <div class="level-sub">跟着伢牙骑士一起刷牙，刷掉所有蛀斑。</div>
+    <div class="level-icon">🪥</div>
+  </div>
+
+  <div id="btnLevel3" class="level-card locked">
+    <div class="level-tag">关卡3</div>
+    <div class="level-title">拼图寻宝记</div>
+    <div class="level-sub">拼出伢牙乐IP图案，发现防蛀宝藏。</div>
+    <div class="level-icon">🧩</div>
+  </div>
+
+  <div id="btnLevel4" class="level-card locked">
+    <div class="level-tag">关卡4</div>
+    <div class="level-title">笑容创意工坊</div>
+    <div class="level-sub">上传亲子笑脸，打造专属防蛀海报。</div>
+    <div class="level-icon">😊</div>
+  </div>
+</div>
+
+        <div class="bottom-nav">
+          <button class="btn-ghost" id="btnSignin">每日签到</button>
+          <button class="btn-ghost" id="btnProfile">个人中心</button>
+          <button class="btn-ghost" id="btnShop">兑换商城</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+ <!-- 关卡1：游戏页面 -->
+<div id="screen-level1" class="screen">
+  <div class="hud">
+    <div class="hud-left">
+      <div id="hudAvatar1" class="hud-avatar">
+        <img class="hud-avatar-img" src="images/tooth-boy.png" alt="伢牙骑士头像">
+      </div>
+      <div class="hud-info">
+        <strong>糖酸怪兽退散</strong>
+        <span>60秒击退不少于30只糖酸怪兽。</span>
+      </div>
+    </div>
+    <div class="hud-right">
+      
+      <button class="btn-ghost" onclick="backToHome()">返回</button>
+    </div>
+  </div>
+
+  <div class="game-area">
+    <div class="game-top-bar">
+      <span>倒计时：<strong id="timerL1">60</strong> 秒</span>
+      <span>本关击退怪兽：<strong id="hitCountL1">0</strong></span>
+      <button id="btnStartL1" class="btn-primary">开始挑战</button>
+    </div>
+    <div class="game-field" id="fieldL1">
+      <div style="position:absolute;bottom:6px;left:6px;font-size:12px;max-width:220px;opacity:.85;">
+        伢牙骑士举起防蛀盾牌：“误点到防蛀卫士时，我会帮你挡一下，但是会扣5分哦。”
+      </div>
+    </div>
+    <div class="shield-tip">点击橙色“糖酸怪兽”得分，绿色“防蛀卫士”不要点。</div>
+  </div>
+</div>
+
+
+  <!-- 关卡2：游戏页面 -->
+<div id="screen-level2" class="screen">
+  <div class="hud">
+    <div class="hud-left">
+      <div id="hudAvatar2" class="hud-avatar">
+        <img class="hud-avatar-img" src="images/tooth-boy.png" alt="伢牙骑士头像">
+      </div>
+      <div class="hud-info">
+        <strong>闪光牙刷</strong>
+        <span>跟着骑士学巴氏刷牙法，刷干净牙齿。</span>
+      </div>
+    </div>
+    <div class="hud-right">
+      
+      <button class="btn-ghost" onclick="backToHome()">返回</button>
+    </div>
+  </div>
+
+  <div class="game-area">
+    <div class="game-top-bar">
+      <span>倒计时：<strong id="timerL2">60</strong> 秒</span>
+      <span>清洁度评分：<strong id="scoreL2">0</strong> 分</span>
+      <button id="btnStartL2" class="btn-primary">开始刷牙比赛</button>
+    </div>
+    <div style="font-size:13px;margin-top:4px;">
+      提示：点击每颗牙齿多次，直到变成洁白状态，全部变白即可拿到高分。
+    </div>
+    <div class="game-field">
+      <div style="font-size:13px;">
+        伢牙骑士演示：“刷牙时牙刷与牙面成45°，小幅度震颤，再由牙龈向牙尖轻轻刷。”
+      </div>
+      <div id="teethGrid" class="teeth-grid"></div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- 关卡3 -->
+  <div id="screen-level3" class="screen">
+    <div class="hud">
+      <div class="hud-left">
+<div id="hudAvatar3" class="hud-avatar"
+>
+    <img class="hud-avatar-img" src="images/tooth-boy.png" alt="伢牙骑士头像"
+>
+  </div
+>        
+        <div class="hud-info">
+          <strong>拼图寻宝记</strong>
+          <span>拼出数字拼图，找出隐藏宝藏。</span>
+        </div>
+      </div>
+      <div class="hud-right">
+        
+        <button class="btn-ghost" onclick="backToHome()">返回</button>
+      </div>
+    </div>
+    <div class="game-area">
+      <div class="game-top-bar">
+        <span>用时：<strong id="timeL3">0</strong> 秒</span>
+        <span>步数：<strong id="stepsL3">0</strong></span>
+        <button id="btnStartL3" class="btn-primary">开始拼图</button>
+      </div>
+      <div class="game-field center">
+        <div>
+          <div style="font-size:13px;margin-bottom:4px;">
+  提示：点击数字方块，将其与旁边的空格交换位置，排成 1~3 即可完成拼图。
+</div>
+
+          <div id="puzzleGrid" class="puzzle-grid"></div>
+          <div class="puzzle-hint">隐藏图案象征蓝白与粉紫伢牙骑士同框，旁边还有伢牙乐产品宝藏。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 关卡4 -->
+  <div id="screen-level4" class="screen">
+    <div class="hud">
+      <div class="hud-left">
+        <div id="hudAvatar4" class="hud-avatar"
+>
+    <img class="hud-avatar-img" src="images/tooth-boy.png" alt="伢牙骑士头像"
+>
+  </div
+>
+        <div class="hud-info">
+          <strong>笑容创意工坊</strong>
+          <span>上传亲子笑脸，拖动贴纸装饰防蛀海报。</span>
+        </div>
+      </div>
+      <div class="hud-right">
+        
+        <button class="btn-ghost" onclick="backToHome()">返回</button>
+      </div>
+    </div>
+    <div class="game-area">
+      <div class="game-top-bar">
+        <div>
+          <label style="font-size:13px;">选择照片：</label>
+          <input id="photoInput" type="file" accept="image/*" style="font-size:12px;max-width:230px;">
+        </div>
+        <button id="btnFinishPoster" class="btn-primary">生成防蛀笑容海报</button>
+      </div>
+      <div class="poster-layout">
+        <div id="posterArea" class="poster-left">
+          <span id="posterPlaceholder" style="font-size:13px;color:#9ca3af;">上传一张露齿笑照片，或先用示意图测试效果。</span>
+        </div>
+        <div class="poster-right">
+          <div style="font-size:13px;margin-bottom:6px;">可用贴纸</div>
+          <button class="btn-secondary sticker-btn" id="btnStickerBoy">添加蓝白伢牙骑士贴纸</button>
+          <button class="btn-secondary sticker-btn" id="btnStickerGirl">添加粉紫伢牙骑士贴纸</button>
+          <button class="btn-secondary sticker-btn" id="btnStickerHeart">添加“防蛀笑容”贴纸</button>
+          <div style="font-size:12px;margin-top:4px;line-height:1.5;">
+            提示：点击贴纸后可以拖动位置，放到照片旁边或角落，让伢牙骑士给笑容“点赞”。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 通用弹窗：签到/个人中心/商城 -->
+  <div id="genericDialog" class="dialog">
+    <div class="dialog-box">
+      <div class="dialog-title" id="genericTitle">提示</div>
+      <div class="dialog-content" id="genericContent"></div>
+      <div style="text-align:right;">
+        <button class="btn-primary" id="btnDialogOk">知道啦</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 结果浮层 -->
+  <div id="resultOverlay">
+    <div id="resultBox">
+      <h3 id="resultTitle">挑战结果</h3>
+      <p id="resultText"></p>
+      <div id="resultExtra"></div>
+      <div style="margin-top:10px;text-align:right;">
+        <button class="btn-primary" id="btnResultBack">返回地图</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+   // 全局状态
+  let player = { character: "boy", name: ""
+ };
+  let yaPoints = 0
+;
+  let hasSignedToday = false
+;
+  let unlocked = {1:true,2:false,3:false,4:false
+};
+  let loadingProgress = 0
+;
+  let
+ loadingInterval;
+
+  // 本地存档 key 和伢分明细日志
+  const STORAGE_KEY = "ya_island_state_v1"
+;
+  const LOG_KEY = "ya_island_log_v1"
+;
+  let
+ pointLog = [];
+  // 关卡定时器和状态
+  let timerL1=null,timeL1=60,scoreL1=0,hitCountL1=0;
+  let timerL2=null,timeL2=60,cleanCount=0,totalTeeth=18;
+  let timerL3=null,timeL3=0,stepsL3=0,puzzleState=[];
+  let draggingSticker=null,dragOffsetX=0,dragOffsetY=0;
+  // 公共函数
+  function showScreen(id){
+    document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+    updateHUD();
+  }
+   
+     function resetGameState() {
+    if (!confirm("确定要清空本地记录并重新开始吗？此操作只影响当前设备。")) return;
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(LOG_KEY);
+    localStorage.removeItem("ya_island_signed_date");
+    player = { character: "boy", name: "" };
+    yaPoints = 0;
+    hasSignedToday = false;
+    unlocked = {1:true,2:false,3:false,4:false};
+    pointLog = [];
+    updateHUD();
+    showScreen("screen-character");
+  }
+
+// 生成“今天”的日期字符串，用来判断是否签到
+  function getTodayKey(
+) {
+    const d = new Date
+();
+    const y = d.getFullYear
+();
+    const m = String(d.getMonth() + 1).padStart(2, "0"
+);
+    const day = String(d.getDate()).padStart(2, "0"
+);
+    return `${y}-${m}-${day}
+`;
+  }
+
+  // 保存当前游戏进度到 localStorage
+  function saveGameState(
+) {
+    const
+ state = {
+      player,
+      yaPoints,
+      unlocked,
+      signedDate: localStorage.getItem("ya_island_signed_date") || null
+    };
+    try
+ {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify
+(state));
+    } 
+catch
+ (e) {
+      console.warn("saveGameState error"
+, e);
+    }
+  }
+
+  // 读取本地存档，恢复进度
+  function loadGameState(
+) {
+    const raw = localStorage.getItem(STORAGE_KEY
+);
+    if (!raw) return
+;
+    try
+ {
+      const state = JSON.parse
+(raw);
+      if (state.player) player = state.player
+;
+      if (typeof state.yaPoints === "number") yaPoints = state.yaPoints
+;
+      if (state.unlocked) unlocked = state.unlocked
+;
+      if (state.signedDate
+) {
+        localStorage.setItem("ya_island_signed_date", state.signedDate
+);
+        hasSignedToday = state.
+signedDate === getTodayKey
+();
+      }
+    } 
+catch
+ (e) {
+      console.warn("loadGameState error"
+, e);
+    }
+  }
+
+  // 伢分明细日志加载
+  function loadLog(
+) {
+    const raw = localStorage.getItem(LOG_KEY
+);
+    if
+ (!raw) {
+      pointLog = [];
+      return
+;
+    }
+    try
+ {
+      pointLog = 
+JSON.parse
+(raw) || [];
+    } 
+catch
+ {
+      pointLog = [];
+    }
+  }
+
+  // 往伢分明细里记一条
+  function pushLog(reason, delta
+) {
+    const
+ item = {
+      time: new Date().toLocaleString
+(),
+      reason,
+      delta
+    };
+    pointLog.
+unshift
+(item);
+    pointLog = pointLog.
+slice(0, 20); // 只留最近 20 条
+    try
+ {
+      localStorage.setItem(LOG_KEY, JSON.stringify
+(pointLog));
+    } 
+catch
+ (e) {
+      console.warn("pushLog error"
+, e);
+    }
+  }
+
+  // 页面切换
+  function showScreen(id
+){
+    document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"
+));
+    document.getElementById(id).classList.add("active"
+);
+    updateHUD
+();
+  }
+
+  function updateHUD(
+){
+    const name = player.name || "防蛀骑士"
+;
+    document.getElementById("hudName").textContent
+ = name;
+    document.getElementById("hudPoints").textContent
+ = yaPoints;
+
+    [
+"pointsL1","pointsL2","pointsL3","pointsL4"].forEach(id=>{
+      const el = document.getElementById
+(id);
+      if(el) el.textContent
+ = yaPoints;
+    });
+
+
+  // 根据角色选择切换头像图片
+    const avatarSrc = (player.character === "girl"
+)
+      ? 
+"images/tooth-girl.png"
+      : 
+"images/tooth-boy.png"
+;
+
+    document.querySelectorAll(".hud-avatar-img").forEach(img=>{
+      img.
+src
+ = avatarSrc;
+    });
+
+    const avatarHome = document.getElementById("hudAvatar"
+);
+    avatarHome.
+classList.toggle("girl", player.character === "girl"
+);
+    [
+"hudAvatar1","hudAvatar2","hudAvatar3","hudAvatar4"].forEach(id=>{
+      const el = document.getElementById
+(id);
+      if(el) el.classList.toggle("girl", player.character === "girl"
+);
+    });
+
+
+    // 守护树状态
+    const tree=document.getElementById("guardTree");
+    const treeText=document.getElementById("treeText");
+    if(unlocked[4] && unlocked[1] && unlocked[2] && unlocked[3]){
+      tree.classList.remove("locked");
+      tree.classList.add("tree-fruit");
+      treeText.textContent="恭喜完成四大关卡，防蛀守护树已经结出“兑换果实”，可以前往兑换商城领取骑士周边。";
+    }
+  }
+  function lockLevelCard(level){
+    const card=document.getElementById("btnLevel"+level);
+    if(!card) return;
+    if(unlocked[level]) card.classList.remove("locked");
+    else card.classList.add("locked");
+  }
+  function backToHome(){
+    showScreen("screen-home");
+  }
+  function randomNickname(){
+    const num=Math.floor(Math.random()*900+100);
+    return "防蛀骑士"+num;
+  }
+  function openGenericDialog(title,text){
+    document.getElementById("genericTitle").textContent=title;
+    document.getElementById("genericContent").textContent=text;
+    document.getElementById("genericDialog").classList.add("active");
+  }
+  function closeGenericDialog(){
+    document.getElementById("genericDialog").classList.remove("active");
+  }
+  function showResult(title,html){
+    document.getElementById("resultTitle").textContent=title;
+    document.getElementById("resultText").innerHTML=html;
+    const extra=document.getElementById("resultExtra");
+    extra.innerHTML="";
+    if(unlocked[1] && unlocked[2] && unlocked[3] && unlocked[4]){
+      const div=document.createElement("div");
+      div.innerHTML='<span class="medal">防蛀小英雄 · 全通关勋章</span><div style="font-size:13px;margin-top:6px;">蓝白与粉紫伢牙骑士一起为你颁发全通关勋章，防蛀守护树结出了“兑换果实”。</div>';
+      extra.appendChild(div);
+    }
+    document.getElementById("resultOverlay").classList.add("active");
+  }
+  function closeResult(){
+    document.getElementById("resultOverlay").classList.remove("active");
+    backToHome();
+  }
+
+  // 加载动画
+  function startLoading(){
+    loadingInterval=setInterval(()=>{
+      loadingProgress+=Math.random()*12+5;
+      if(loadingProgress>100) loadingProgress=100;
+      document.getElementById("loadingFill").style.width=loadingProgress+"%";
+      if(loadingProgress>=100){
+        clearInterval(loadingInterval);
+        setTimeout(()=>{showScreen("screen-character");},400);
+      }
+    },260);
+  }
+
+  // 关卡1：糖酸怪兽退散
+  function resetLevel1(){
+    clearInterval(timerL1);timerL1=null;
+    timeL1=60;scoreL1=0;hitCountL1=0;
+    document.getElementById("timerL1").textContent=timeL1;
+    document.getElementById("hitCountL1").textContent=hitCountL1;
+    document.getElementById("pointsL1").textContent=yaPoints;
+    document.getElementById("fieldL1").querySelectorAll(".monster,.guardian").forEach(e=>e.remove());
+  }
+  function startLevel1(){
+    resetLevel1();
+    const field=document.getElementById("fieldL1");
+    timerL1=setInterval(()=>{
+      timeL1--;
+      document.getElementById("timerL1").textContent=timeL1;
+      // 生成敌人或卫士
+      spawnTargetL1(field);
+      if(timeL1<=0){
+        clearInterval(timerL1);timerL1=null;
+        const success=hitCountL1>=30;
+                const baseReward=success? (50+Math.floor(Math.random()*21)):20;
+        yaPoints+=baseReward;
+        pushLog("关卡1 · 糖酸怪兽退散", baseReward);
+        if(success){unlocked[2]=true;lockLevelCard(2);}
+        saveGameState();
+
+        const msgSuccess=`和 ${player.name||"伢牙骑士"} 一起击退了 <strong>${hitCountL1}</strong> 只糖酸怪兽，牙齿城堡被防蛀泡沫紧紧包裹。<br>获得本关伢分 <strong>${baseReward}</strong> 分，并自动点亮“闪光牙刷骑士”路径。`;
+        const msgFail=`本次击退了 <strong>${hitCountL1}</strong> 只糖酸怪兽，还差一点点就能完全守住牙齿城堡，下次再来挑战。<br>安慰奖励伢分 <strong>${baseReward}</strong> 分。`;
+        showResult(success?"通关成功 · 糖酸怪兽退散": "暂未通关 · 继续加油",success?msgSuccess:msgFail);
+      }
+    },1000);
+  }
+  function spawnTargetL1(field){
+    const isMonster=Math.random()<0.7;
+    const div=document.createElement("div");
+    div.className=isMonster?"monster":"guardian";
+    div.innerHTML=isMonster?'<span>🍭</span>':'<span>🛡</span>';
+    const rect=field.getBoundingClientRect();
+    const x=Math.random()*(rect.width-80);
+    const y=Math.random()*(rect.height-80);
+    div.style.left=x+"px";div.style.top=y+"px";
+    div.addEventListener("click",()=>{
+      if(!timerL1) return;
+      if(div.clicked) return;
+      div.clicked=true;
+      if(isMonster){
+        hitCountL1++;
+        scoreL1+=3;
+        document.getElementById("hitCountL1").textContent=hitCountL1;
+      }else{
+        scoreL1-=5;
+        const tip=document.createElement("div");
+        tip.textContent="别打自己人~";
+        tip.style.position="absolute";tip.style.top="-18px";tip.style.fontSize="11px";
+        div.appendChild(tip);
+        setTimeout(()=>tip.remove(),700);
+      }
+      div.style.transform="scale(.6)";
+      setTimeout(()=>div.remove(),150);
+    });
+    field.appendChild(div);
+    setTimeout(()=>{if(!div.clicked)div.remove();},900);
+  }
+
+  // 关卡2：刷牙比赛
+  function buildTeeth(){
+    const grid=document.getElementById("teethGrid");
+    grid.innerHTML="";
+    totalTeeth=18;
+    for(let i=0;i<totalTeeth;i++){
+      const tooth=document.createElement("div");
+      tooth.className="tooth";
+      tooth.dataset.clean="0";
+      tooth.addEventListener("click",()=>{
+        if(!timerL2) return;
+        let clean=parseInt(tooth.dataset.clean,10);
+        if(clean<2) clean++;
+        tooth.dataset.clean=clean;
+        if(clean>=2 && !tooth.classList.contains("clean")){
+          tooth.classList.add("clean");
+          cleanCount++;
+          updateScoreL2();
+        }
+      });
+      grid.appendChild(tooth);
+    }
+  }
+  function resetLevel2(){
+    clearInterval(timerL2);timerL2=null;
+    timeL2=60;cleanCount=0;
+    document.getElementById("timerL2").textContent=timeL2;
+    document.getElementById("scoreL2").textContent="0";
+    buildTeeth();
+  }
+  function updateScoreL2(){
+    const percent=Math.round(cleanCount/totalTeeth*100);
+    document.getElementById("scoreL2").textContent=percent;
+  }
+  function startLevel2(){
+    resetLevel2();
+    timerL2=setInterval(()=>{
+      timeL2--;
+      document.getElementById("timerL2").textContent=timeL2;
+      if(timeL2<=0){
+        clearInterval(timerL2);timerL2=null;
+        const percent=Math.round(cleanCount/totalTeeth*100);
+                const baseReward=percent>=85?(80+Math.floor(Math.random()*31)):(40+Math.floor(Math.random()*21));
+        yaPoints+=baseReward;
+        pushLog("关卡2 · 闪光牙刷骑士", baseReward);
+        let msg;
+
+        if(percent>=85){
+          unlocked[3]=true;lockLevelCard(3);
+          msg=`你的刷牙清洁度达到 <strong>${percent}</strong> 分，伢牙骑士变身为“闪光形态”，获得“防蛀小达人”勋章，并额外得到伢分 <strong>${baseReward}</strong> 分，同时解锁“拼图寻宝记”。<div class="medal" style="margin-top:6px;">防蛀小达人</div>`;
+        }else{
+          msg=`本次清洁度为 <strong>${percent}</strong> 分，部分区域还有小蛀斑，伢牙骑士温柔提醒下次多照顾到牙缝和靠里的牙齿。<br>获得伢分 <strong>${baseReward}</strong> 分。`;
+        }
+                saveGameState();
+        showResult("关卡结果 · 闪光牙刷骑士",msg);
+      }
+    },1000);
+  }
+
+  // 关卡3：拼图
+  function resetLevel3(){
+    clearInterval(timerL3);timerL3=null;
+    timeL3=0;stepsL3=0;
+    document.getElementById("timeL3").textContent=timeL3;
+    document.getElementById("stepsL3").textContent=stepsL3;
+    buildPuzzle();
+  }
+  function buildPuzzle(){
+    const grid=document.getElementById("puzzleGrid");
+    grid.innerHTML="";
+    puzzleState=[1,2,3,null];
+    // 简单打乱
+    for(let i=puzzleState.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [puzzleState[i],puzzleState[j]]=[puzzleState[j],puzzleState[i]];
+    }
+    puzzleState.forEach((val,idx)=>{
+      const tile=document.createElement("div");
+      tile.dataset.index=idx;
+      if(val===null){tile.className="puzzle-tile empty";}
+      else{
+        tile.className="puzzle-tile";
+        tile.textContent=val;
+        tile.addEventListener("click",()=>moveTile(idx));
+      }
+      grid.appendChild(tile);
+    });
+  }
+  function moveTile(index){
+    if(!timerL3) return;
+    const emptyIndex=puzzleState.indexOf(null);
+    const neighbors=[emptyIndex-1,emptyIndex+1,emptyIndex-3,emptyIndex+3];
+    if(!neighbors.includes(index)) return;
+    [puzzleState[index],puzzleState[emptyIndex]]=[puzzleState[emptyIndex],puzzleState[index]];
+    stepsL3++;
+    document.getElementById("stepsL3").textContent=stepsL3;
+    renderPuzzle();
+    checkPuzzleComplete();
+  }
+  function renderPuzzle(){
+    const grid=document.getElementById("puzzleGrid");
+    Array.from(grid.children).forEach((tile,idx)=>{
+      const val=puzzleState[idx];
+      tile.dataset.index=idx;
+      if(val===null){
+        tile.className="puzzle-tile empty";
+        tile.textContent="";
+        tile.onclick=null;
+      }else{
+        tile.className="puzzle-tile";
+        tile.textContent=val;
+        tile.onclick=()=>moveTile(idx);
+      }
+    });
+  }
+  function checkPuzzleComplete(){
+    const complete=[1,2,3,null];
+    for(let i=0;i<complete.length;i++){
+      if(puzzleState[i]!==complete[i]) return;
+    }
+    clearInterval(timerL3);timerL3=null;
+    const baseReward=60+Math.max(0,40-Math.floor(timeL3/2));
+    yaPoints+=baseReward;
+    pushLog("关卡3 · 拼图寻宝记", baseReward);
+    unlocked[4]=true;lockLevelCard(4);
+    saveGameState();
+    const msg=`你在 <strong>${timeL3}</strong> 秒内，用 <strong>${stepsL3}</strong> 步完成了伢牙乐双骑士拼图，成功找到隐藏宝藏，获得伢分 <strong>${baseReward}</strong> 分，并解锁“笑容创意工坊”。<br><span class="medal">宝藏收藏家</span>`;
+    showResult("通关成功 · 拼图寻宝记",msg);
+  }
+  function startLevel3(){
+    resetLevel3();
+    timerL3=setInterval(()=>{
+      timeL3++;
+      document.getElementById("timeL3").textContent=timeL3;
+    },1000);
+  }
+
+  // 关卡4：笑容创意工坊
+  function resetLevel4(){
+    document.getElementById("pointsL4").textContent=yaPoints;
+  }
+  function handlePhotoUpload(evt){
+    const file=evt.target.files[0];
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+      let img=document.querySelector("#posterArea img");
+      const poster=document.getElementById("posterArea");
+      document.getElementById("posterPlaceholder").style.display="none";
+      if(!img){
+        img=document.createElement("img");
+        poster.appendChild(img);
+      }
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  function addSticker(type){
+    const poster=document.getElementById("posterArea");
+    const sticker=document.createElement("div");
+    sticker.className="sticker "+type;
+    sticker.textContent=type==="boy"?"蓝白骑士":type==="girl"?"粉紫骑士":"防蛀笑容";
+    const rect=poster.getBoundingClientRect();
+    const x=Math.random()*(rect.width-90)+10;
+    const y=Math.random()*(rect.height-90)+10;
+    sticker.style.left=x+"px";sticker.style.top=y+"px";
+    sticker.addEventListener("pointerdown",e=>{
+      draggingSticker=sticker;
+      dragOffsetX=e.clientX-sticker.offsetLeft;
+      dragOffsetY=e.clientY-sticker.offsetTop;
+      sticker.setPointerCapture(e.pointerId);
+    });
+    sticker.addEventListener("pointerup",e=>{
+      draggingSticker=null;
+      sticker.releasePointerCapture(e.pointerId);
+    });
+    sticker.addEventListener("pointermove",e=>{
+      if(draggingSticker!==sticker) return;
+      const rectPoster=poster.getBoundingClientRect();
+      let nx=e.clientX-dragOffsetX;
+      let ny=e.clientY-dragOffsetY;
+      nx=Math.max(0,Math.min(rectPoster.width-80,nx));
+      ny=Math.max(0,Math.min(rectPoster.height-80,ny));
+      sticker.style.left=nx+"px";sticker.style.top=ny+"px";
+    });
+    poster.appendChild(sticker);
+  }
+  function finishPoster(){
+    const reward=100+Math.floor(Math.random()*51);
+    yaPoints+=reward;
+    pushLog("关卡4 · 防蛀笑容海报", reward);
+    saveGameState();
+    const msg=`你已经完成了一张专属“防蛀笑容海报”，伢牙骑士出现在海报角落，为这张亲子露齿笑大声点赞。<br>防蛀守护树完全开花结果，获得伢分 <strong>${reward}</strong> 分。`;
+    showResult("完成创作 · 防蛀笑容海报",msg);
+  }
+
+  // 初始化和事件绑定
+    document.addEventListener("DOMContentLoaded",()=>{
+    // 先恢复本地存档和伢分明细
+    loadGameState();
+    loadLog();
+
+    startLoading();
+
+    // 初始化今日签到状态（如果存档里没写，就再单独判断一次）
+    const todayKey = getTodayKey();
+    const signedDate = localStorage.getItem("ya_island_signed_date");
+    hasSignedToday = signedDate === todayKey;
+
+    // 角色选择
+    const cardBoy=document.getElementById("cardBoy");
+    const cardGirl=document.getElementById("cardGirl");
+    cardBoy.addEventListener("click",()=>{
+      player.character="boy";
+      cardBoy.classList.add("selected");
+      cardGirl.classList.remove("selected");
+    });
+    cardGirl.addEventListener("click",()=>{
+      player.character="girl";
+      cardGirl.classList.add("selected");
+      cardBoy.classList.remove("selected");
+    });
+    document.getElementById("btnRandomName").addEventListener("click",()=>{
+      const name=randomNickname();
+      document.getElementById("nickname").value=name;
+    });
+
+        document.getElementById("btnEnterIsland").addEventListener("click",()=>{
+      const input=document.getElementById("nickname");
+      player.name=input.value.trim()||randomNickname();
+      input.value=player.name;
+      lockLevelCard(1);lockLevelCard(2);lockLevelCard(3);lockLevelCard(4);
+      saveGameState();
+      pushLog("创建防蛀骑士", 0);
+      showScreen("screen-home");
+    });
+
+    // 地图入口
+    document.getElementById("btnLevel1").addEventListener("click",()=>{
+      showScreen("screen-level1");
+      resetLevel1();
+    });
+    document.getElementById("btnLevel2").addEventListener("click",()=>{
+      if(!unlocked[2]){openGenericDialog("关卡尚未解锁","先完成“糖酸怪兽退散”关卡，才能点亮“闪光牙刷骑士”的道路。");return;}
+      showScreen("screen-level2");
+      resetLevel2();
+    });
+    document.getElementById("btnLevel3").addEventListener("click",()=>{
+      if(!unlocked[3]){openGenericDialog("关卡尚未解锁","先在“闪光牙刷骑士”关卡拿到合格清洁度，再开启“拼图寻宝记”。");return;}
+      showScreen("screen-level3");
+      resetLevel3();
+    });
+    document.getElementById("btnLevel4").addEventListener("click",()=>{
+      if(!unlocked[4]){openGenericDialog("关卡尚未解锁","先完成“拼图寻宝记”，找到伢牙乐宝藏后，才能进入笑容创意工坊。");return;}
+      showScreen("screen-level4");
+      resetLevel4();
+    });
+    // ★ 新增：返回创建角色按钮
+  document.getElementById("btnBackToCreator").addEventListener("click", () =>
+ {
+    showScreen("screen-character"
+);
+  });
+
+      document.getElementById("btnReset").addEventListener("click", resetGameState);
+
+    // 签到/个人中心/商城
+        document.getElementById("btnSignin").addEventListener("click", () => {
+      const todayKey = getTodayKey();
+
+      // 如果今天已经签过到：不再加分，只提示文案
+      if (hasSignedToday && localStorage.getItem("ya_island_signed_date") === todayKey) {
+        openGenericDialog("每日签到", "今日已签到，明日再来吧~");
+        return;
+      }
+
+      // 第一次签到：加分 + 记录日期 + 刷新 HUD
+            const reward = 10;
+      yaPoints += reward;
+      hasSignedToday = true;
+      localStorage.setItem("ya_island_signed_date", todayKey);
+
+      pushLog("每日签到", reward);
+      saveGameState();
+      updateHUD();
+
+      openGenericDialog(
+
+        "每日签到成功",
+        "今日已签到，牙齿城堡为你亮起一盏小灯，获得伢分 " + reward + " 分。"
+      );
+    });
+
+        document.getElementById("btnProfile").addEventListener("click",()=>{
+  loadLog();
+  const baseInfo = "昵称：" + (player.name || "防蛀骑士") + "；当前伢分：" + yaPoints + "。";
+  const lines = pointLog.map(
+    item => `${item.time} · ${item.reason} +${item.delta}分`
+  );
+  const detail = lines.length
+    ? ("\n\n伢分明细：\n" + lines.join("\n"))
+    : "\n\n暂时还没有伢分记录~";
+
+  openGenericDialog("个人中心", baseInfo + detail);
+});
+
+
+    document.getElementById("btnShop").addEventListener("click",()=>{
+      openGenericDialog("兑换商城","兑换池示例：\n· 300伢分：伢牙乐蓝白骑士钥匙扣\n· 500伢分：双骑士Q版手办\n· 800伢分：亲子防蛀礼包\n可以根据活动实际配置调整。");
+    });
+    document.getElementById("btnDialogOk").addEventListener("click",closeGenericDialog);
+    // 关卡1按钮
+    document.getElementById("btnStartL1").addEventListener("click",startLevel1);
+    // 关卡2按钮
+    document.getElementById("btnStartL2").addEventListener("click",startLevel2);
+    // 关卡3按钮
+    document.getElementById("btnStartL3").addEventListener("click",startLevel3);
+    // 关卡4
+    document.getElementById("photoInput").addEventListener("change",handlePhotoUpload);
+    document.getElementById("btnStickerBoy").addEventListener("click",()=>addSticker("boy"));
+    document.getElementById("btnStickerGirl").addEventListener("click",()=>addSticker("girl"));
+    document.getElementById("btnStickerHeart").addEventListener("click",()=>addSticker("heart"));
+    document.getElementById("btnFinishPoster").addEventListener("click",finishPoster);
+    // 结果浮层
+    document.getElementById("btnResultBack").addEventListener("click",closeResult);
+  });
+</script>
+</body>
+</html>
